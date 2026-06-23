@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Highlight Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbfbf9;
+    --surface: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #6b6b6b;
+    --line: #e8e6e0;
+    --line-strong: #d9d6cd;
+    --accent: #c2410c;        /* burnt orange — single accent */
+    --accent-soft: #fdf0e8;
+    --kept: #c2410c;
+    --bar: #d9d6cd;
+    --ok: #15803d;
+    --radius: 12px;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Inter", system-ui, sans-serif; font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header { margin-bottom: 32px; }
+  header h1 {
+    font-family: "Fraunces", serif; font-weight: 600; font-size: 2.6rem;
+    letter-spacing: -0.02em; margin: 0; line-height: 1.05;
+  }
+  header h1 .mark { color: var(--accent); }
+  header p { color: var(--ink-soft); margin: 8px 0 0; font-size: 0.95rem; max-width: 56ch; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1.05fr; gap: 28px; align-items: start; }
+  @media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .card + .card { margin-top: 18px; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink-soft); margin: 0 0 14px;
+  }
+
+  label.field { display: block; margin-bottom: 14px; }
+  label.field > span { display: block; font-size: 0.82rem; color: var(--ink-soft); margin-bottom: 5px; }
+  input[type=text], textarea, select {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line-strong);
+    border-radius: 8px; background: var(--bg); color: var(--ink);
+    font-family: inherit; font-size: 0.92rem;
+  }
+  textarea { resize: vertical; min-height: 56px; }
+  input[type=text]:focus, textarea:focus, select:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .drop {
+    border: 1.5px dashed var(--line-strong); border-radius: 10px; padding: 22px;
+    text-align: center; color: var(--ink-soft); cursor: pointer; transition: .15s;
+    font-size: 0.9rem;
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .drop strong { color: var(--ink); font-weight: 600; }
+  .drop.has-file { border-style: solid; border-color: var(--ok); color: var(--ok); }
+
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .row2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+  .slider { margin-bottom: 12px; }
+  .slider .top { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--ink-soft); margin-bottom: 4px; }
+  .slider .top b { color: var(--ink); font-family: var(--mono); font-weight: 500; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  .checks { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; }
+  .check { display: flex; align-items: center; gap: 7px; font-size: 0.88rem; }
+  .check input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+  .seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    border: none; background: var(--surface); color: var(--ink-soft);
+    padding: 8px 14px; font: inherit; font-size: 0.85rem; cursor: pointer;
+  }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .seg button + button { border-left: 1px solid var(--line-strong); }
+
+  button.go {
+    width: 100%; margin-top: 4px; padding: 13px; border: none; border-radius: 10px;
+    background: var(--accent); color: #fff; font: inherit; font-weight: 600; font-size: 0.98rem;
+    cursor: pointer; transition: .15s;
+  }
+  button.go:hover { background: #a83609; }
+  button.go:disabled { opacity: .5; cursor: not-allowed; }
+
+  .status {
+    font-size: 0.9rem; color: var(--ink-soft); min-height: 1.4em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .progress { height: 6px; background: var(--line); border-radius: 4px; overflow: hidden; margin-top: 10px; display: none; }
+  .progress.show { display: block; }
+  .progress > div { height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+
+  .result-empty {
+    border: 1px dashed var(--line-strong); border-radius: var(--radius);
+    padding: 48px 24px; text-align: center; color: var(--ink-soft);
+    font-family: var(--mono); font-size: 0.85rem;
+  }
+
+  video { width: 100%; border-radius: 10px; background: #000; display: block; }
+
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+  .pill {
+    font-family: var(--mono); font-size: 0.72rem; padding: 4px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); border: 1px solid #f3d9c9;
+  }
+  .pill.muted { background: var(--bg); color: var(--ink-soft); border-color: var(--line); }
+
+  .downloads { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+  .downloads a {
+    text-decoration: none; font-size: 0.84rem; font-family: var(--mono);
+    border: 1px solid var(--line-strong); border-radius: 8px; padding: 7px 12px;
+    color: var(--ink); transition: .15s;
+  }
+  .downloads a:hover { border-color: var(--accent); color: var(--accent); }
+
+  canvas { width: 100%; height: auto; display: block; }
+  .timeline-caption { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-soft); margin-top: 6px; text-align: center; }
+
+  details { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 16px; }
+  details summary {
+    cursor: pointer; font-size: 0.86rem; color: var(--ink-soft);
+    font-family: var(--mono); letter-spacing: 0.02em; list-style: none;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: "+ "; color: var(--accent); }
+  details[open] summary::before { content: "– "; }
+
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.8rem; margin-top: 10px; }
+  th { text-align: left; color: var(--ink-soft); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line-strong); }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td.score { text-align: right; font-variant-numeric: tabular-nums; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
+  .scorebar { height: 5px; border-radius: 3px; background: var(--accent); }
+
+  .answer { font-size: 0.92rem; white-space: pre-wrap; }
+  .sheet img { width: 100%; border-radius: 10px; border: 1px solid var(--line); margin-top: 6px; }
+
+  .summary-text { font-size: 0.9rem; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Highlight <span class="mark">Studio</span></h1>
+    <p>Upload a video and the model watches it in segments, scoring each for visual drama,
+       audio peaks, and what's said — then cuts the strong moments into one reel.</p>
+  </header>
+
+  <div class="grid">
+    <!-- ============ Controls ============ -->
+    <div>
+      <div class="card">
+        <p class="eyebrow">Source</p>
+        <div class="drop" id="drop">
+          <strong>Drop a video here</strong> or click to choose<br>
+          <span id="dropHint">up to 30 minutes</span>
+        </div>
+        <input type="file" id="file" accept="video/*" hidden>
+        <label class="field" style="margin-top:16px">
+          <span>What counts as a highlight? (optional)</span>
+          <textarea id="prompt" placeholder="e.g. someone scores, celebrates, or the crowd erupts. Leave blank to auto-detect."></textarea>
+        </label>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow">Selection</p>
+        <div class="seg" id="modeSeg" role="tablist">
+          <button class="on" data-mode="threshold">Threshold</button>
+          <button data-mode="best_n">Best N</button>
+          <button data-mode="best_seconds">Best seconds</button>
+        </div>
+        <div class="slider" id="s-threshold" style="margin-top:14px">
+          <div class="top"><span>Minimum score</span><b id="v-threshold">6.0</b></div>
+          <input type="range" id="threshold" min="0" max="10" step="0.5" value="6">
+        </div>
+        <div class="slider" id="s-n_moments" style="display:none;margin-top:14px">
+          <div class="top"><span>Number of moments</span><b id="v-n_moments">5</b></div>
+          <input type="range" id="n_moments" min="1" max="20" step="1" value="5">
+        </div>
+        <div class="slider" id="s-n_seconds" style="display:none;margin-top:14px">
+          <div class="top"><span>Total seconds</span><b id="v-n_seconds">60</b></div>
+          <input type="range" id="n_seconds" min="5" max="300" step="5" value="60">
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow">Signal weights</p>
+        <div class="slider">
+          <div class="top"><span>Visual</span><b id="v-w_visual">1.00</b></div>
+          <input type="range" id="w_visual" min="0" max="2" step="0.05" value="1">
+        </div>
+        <div class="slider">
+          <div class="top"><span>Audio</span><b id="v-w_audio">0.35</b></div>
+          <input type="range" id="w_audio" min="0" max="2" step="0.05" value="0.35">
+        </div>
+        <div class="slider">
+          <div class="top"><span>Speech</span><b id="v-w_speech">0.50</b></div>
+          <input type="range" id="w_speech" min="0" max="2" step="0.05" value="0.5">
+        </div>
+        <div class="checks">
+          <label class="check"><input type="checkbox" id="use_audio" checked> Audio peaks</label>
+          <label class="check"><input type="checkbox" id="use_speech"> Speech (Whisper)</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow">Segmentation &amp; edit</p>
+        <div class="row">
+          <div class="slider"><div class="top"><span>Segment</span><b id="v-segment_length">10</b></div>
+            <input type="range" id="segment_length" min="5" max="30" step="1" value="10"></div>
+          <div class="slider"><div class="top"><span>Padding</span><b id="v-padding">0.5</b></div>
+            <input type="range" id="padding" min="0" max="3" step="0.25" value="0.5"></div>
+          <div class="slider"><div class="top"><span>Crossfade</span><b id="v-crossfade">0.4</b></div>
+            <input type="range" id="crossfade" min="0" max="1.5" step="0.1" value="0.4"></div>
+        </div>
+        <div class="checks">
+          <label class="check"><input type="checkbox" id="use_scenes" checked> Snap to scene cuts</label>
+          <label class="check"><input type="checkbox" id="overlap"> Overlap windows</label>
+          <label class="check"><input type="checkbox" id="fast_frames" checked> Fast frame scoring</label>
+        </div>
+      </div>
+
+      <button class="go" id="go" disabled>Generate highlights</button>
+
+      <div class="card" style="margin-top:18px">
+        <p class="eyebrow">Ask the video</p>
+        <label class="field">
+          <textarea id="question" placeholder="e.g. How many people appear near the entrance?"></textarea>
+        </label>
+        <button class="go" id="ask" disabled style="background:var(--ink)">Ask</button>
+        <div class="answer" id="answer" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- ============ Results ============ -->
+    <div>
+      <div class="card" id="sourceCard" style="display:none">
+        <p class="eyebrow">Source preview</p>
+        <video id="source" controls preload="metadata"></video>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow">Result</p>
+        <div class="status" id="status">Upload a video to begin.</div>
+        <div class="progress" id="progress"><div id="progressBar"></div></div>
+
+        <div id="resultEmpty" class="result-empty" style="margin-top:14px">
+          your reel will appear here
+        </div>
+
+        <div id="result" style="display:none">
+          <video id="reel" controls></video>
+          <div class="meta" id="meta"></div>
+          <div class="downloads" id="downloads"></div>
+          <canvas id="timeline" width="660" height="180"></canvas>
+          <div class="timeline-caption">Fused score over time — filled bars are kept</div>
+
+          <details id="tableWrap">
+            <summary>Per-segment scores</summary>
+            <table><thead><tr><th>Time</th><th style="text-align:right">Score</th><th></th></tr></thead>
+              <tbody id="tableBody"></tbody></table>
+          </details>
+
+          <details id="sheetWrap" class="sheet">
+            <summary>Contact sheet</summary>
+            <img id="sheet" alt="Contact sheet of highlights">
+          </details>
+
+          <details id="analysisWrap">
+            <summary>Analysis details</summary>
+            <p class="summary-text" id="criteria"></p>
+            <p class="summary-text" id="summaryText"></p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let videoId = null;
+
+// ---- slider value readouts ----
+const fmt = { w_visual:2, w_audio:2, w_speech:2, threshold:1, padding:2, crossfade:1 };
+document.querySelectorAll('input[type=range]').forEach(r => {
+  const out = $('#v-' + r.id);
+  const upd = () => {
+    const d = fmt[r.id];
+    out.textContent = d != null ? Number(r.value).toFixed(d) : r.value;
+  };
+  r.addEventListener('input', upd); upd();
+});
+
+// ---- mode switch ----
+let mode = 'threshold';
+$('#modeSeg').addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  mode = btn.dataset.mode;
+  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b === btn));
+  $('#s-threshold').style.display = mode === 'threshold' ? '' : 'none';
+  $('#s-n_moments').style.display = mode === 'best_n' ? '' : 'none';
+  $('#s-n_seconds').style.display = mode === 'best_seconds' ? '' : 'none';
+});
+
+// ---- upload ----
+const drop = $('#drop'), fileInput = $('#file');
+drop.addEventListener('click', () => fileInput.click());
+['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => { if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) uploadFile(e.target.files[0]); });
+
+let sourceObjUrl = null;
+
+async function uploadFile(file) {
+  drop.innerHTML = `<strong>Uploading…</strong> ${file.name}`;
+  // Show the source instantly from the local file while the upload runs.
+  if (sourceObjUrl) URL.revokeObjectURL(sourceObjUrl);
+  sourceObjUrl = URL.createObjectURL(file);
+  $('#source').src = sourceObjUrl;
+  $('#sourceCard').style.display = '';
+
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    const r = await fetch('/api/upload', { method:'POST', body: fd });
+    const j = await r.json();
+    videoId = j.video_id;
+    const dur = j.duration ? `${Math.round(j.duration)}s` : '';
+    drop.classList.add('has-file');
+    drop.innerHTML = `<strong>${file.name}</strong> ready ${dur ? '· ' + dur : ''}`;
+    $('#go').disabled = false; $('#ask').disabled = false;
+    setStatus('Ready. Adjust settings, then generate.');
+  } catch (err) {
+    drop.innerHTML = `<strong>Upload failed.</strong> Try again.`;
+    $('#sourceCard').style.display = 'none';
+  }
+}
+
+function setStatus(msg) { $('#status').textContent = msg; }
+function setProgress(pct) {
+  const p = $('#progress'); 
+  if (pct == null) { p.classList.remove('show'); return; }
+  p.classList.add('show'); $('#progressBar').style.width = pct + '%';
+}
+
+function gather() {
+  return {
+    video_id: videoId,
+    highlight_prompt: $('#prompt').value,
+    mode,
+    threshold: parseFloat($('#threshold').value),
+    n_moments: parseInt($('#n_moments').value),
+    n_seconds: parseFloat($('#n_seconds').value),
+    w_visual: parseFloat($('#w_visual').value),
+    w_audio: parseFloat($('#w_audio').value),
+    w_speech: parseFloat($('#w_speech').value),
+    use_audio: $('#use_audio').checked,
+    use_speech: $('#use_speech').checked,
+    segment_length: parseFloat($('#segment_length').value),
+    padding: parseFloat($('#padding').value),
+    crossfade: parseFloat($('#crossfade').value),
+    use_scenes: $('#use_scenes').checked,
+    overlap: $('#overlap').checked,
+    fast_frames: $('#fast_frames').checked,
+  };
+}
+
+// ---- generate ----
+$('#go').addEventListener('click', async () => {
+  if (!videoId) return;
+  $('#go').disabled = true; $('#ask').disabled = true;
+  $('#result').style.display = 'none';
+  $('#resultEmpty').style.display = '';
+  setStatus('Starting…'); setProgress(0);
+
+  const r = await fetch('/api/process', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(gather())
+  });
+  const { job_id } = await r.json();
+  const es = new EventSource('/api/events/' + job_id);
+
+  es.addEventListener('progress', e => {
+    const d = JSON.parse(e.data); setStatus(d.message); if (d.pct != null) setProgress(d.pct);
+  });
+  es.addEventListener('error', e => {
+    if (e.data) { setStatus(JSON.parse(e.data).message); }
+    setProgress(null); $('#go').disabled = false; $('#ask').disabled = false; es.close();
+  });
+  es.addEventListener('done', e => {
+    renderResult(JSON.parse(e.data));
+    setProgress(null); $('#go').disabled = false; $('#ask').disabled = false; es.close();
+  });
+});
+
+function renderResult(d) {
+  $('#resultEmpty').style.display = 'none';
+  $('#result').style.display = '';
+  setStatus(`Done — ${d.segment_count} highlight${d.segment_count===1?'':'s'}, ${Math.round(d.kept_percent)}% of runtime.`);
+
+  $('#reel').src = d.reel_url + '?t=' + Date.now();
+
+  const pills = [
+    `<span class="pill">${d.selection}</span>`,
+    `<span class="pill muted">${d.signals.join(' · ')}</span>`,
+    `<span class="pill muted">${d.criteria_source}</span>`,
+  ];
+  $('#meta').innerHTML = pills.join('');
+
+  const dl = [`<a href="${d.reel_url}" download>reel.mp4</a>`,
+              `<a href="${d.json_url}" download>chapters.json</a>`,
+              `<a href="${d.vtt_url}" download>chapters.vtt</a>`];
+  if (d.sheet_url) dl.push(`<a href="${d.sheet_url}" download>contact-sheet.jpg</a>`);
+  $('#downloads').innerHTML = dl.join('');
+
+  drawTimeline(d.windows, d.threshold);
+  renderTable(d.windows);
+
+  $('#criteria').innerHTML = '<strong>Looking for:</strong> ' + escapeHtml(d.criteria);
+  $('#summaryText').innerHTML = '<strong>The model saw:</strong> ' + escapeHtml(d.summary);
+
+  if (d.sheet_url) { $('#sheet').src = d.sheet_url + '?t=' + Date.now(); $('#sheetWrap').style.display = ''; }
+  else { $('#sheetWrap').style.display = 'none'; }
+}
+
+function drawTimeline(windows, threshold) {
+  const c = $('#timeline'), ctx = c.getContext('2d');
+  const W = c.width, H = c.height, pad = 28;
+  const css = getComputedStyle(document.documentElement);
+  const kept = css.getPropertyValue('--kept').trim();
+  const bar = css.getPropertyValue('--bar').trim();
+  const line = css.getPropertyValue('--line').trim();
+  const ink = css.getPropertyValue('--ink-soft').trim();
+  ctx.clearRect(0,0,W,H);
+  if (!windows.length) return;
+  const dur = Math.max(...windows.map(w => w.end));
+  const x = t => pad + (t/dur)*(W-2*pad);
+  const y = s => pad + (H-2*pad) - (s/10)*(H-2*pad);
+
+  // gridlines
+  ctx.strokeStyle = line; ctx.fillStyle = ink; ctx.font = '10px monospace'; ctx.lineWidth = 1;
+  [0,5,10].forEach(v => {
+    ctx.beginPath(); ctx.moveTo(pad, y(v)); ctx.lineTo(W-pad, y(v)); ctx.stroke();
+    ctx.fillText(v, 6, y(v)+3);
+  });
+  // bars
+  windows.forEach(w => {
+    const bx = x(w.start), bw = Math.max(1.5, x(w.end)-x(w.start)-1.5);
+    ctx.fillStyle = w.kept ? kept : bar;
+    const top = y(w.score), h = (H-pad) - top;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(bx, top, bw, h, 2); else ctx.rect(bx, top, bw, h);
+    ctx.fill();
+  });
+  // threshold line
+  ctx.strokeStyle = '#c2410c'; ctx.setLineDash([4,3]); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad, y(threshold)); ctx.lineTo(W-pad, y(threshold)); ctx.stroke();
+  ctx.setLineDash([]);
+  // axis labels
+  ctx.fillStyle = ink; ctx.fillText('0s', pad, H-8);
+  ctx.fillText(Math.round(dur)+'s', W-pad-20, H-8);
+}
+
+function renderTable(windows) {
+  const css = getComputedStyle(document.documentElement);
+  const kept = css.getPropertyValue('--kept').trim();
+  const sorted = [...windows].sort((a,b)=>b.score-a.score);
+  $('#tableBody').innerHTML = sorted.map(w => `
+    <tr>
+      <td><span class="dot" style="background:${w.kept?kept:'#cfccc4'}"></span>${ts(w.start)}–${ts(w.end)}</td>
+      <td class="score">${w.score.toFixed(1)}</td>
+      <td><div class="scorebar" style="width:${Math.round(w.score/10*70)}px;opacity:${w.kept?1:.45}"></div></td>
+    </tr>`).join('');
+}
+
+// ---- ask ----
+$('#ask').addEventListener('click', async () => {
+  if (!videoId) return;
+  const q = $('#question').value.trim();
+  if (!q) { $('#answer').textContent = 'Type a question first.'; return; }
+  $('#ask').disabled = true; $('#go').disabled = true;
+  $('#answer').textContent = 'Thinking…';
+
+  const r = await fetch('/api/ask', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ video_id: videoId, question: q,
+      segment_length: parseFloat($('#segment_length').value), use_speech: $('#use_speech').checked })
+  });
+  const { job_id } = await r.json();
+  const es = new EventSource('/api/events/' + job_id);
+  es.addEventListener('progress', e => { $('#answer').textContent = JSON.parse(e.data).message; });
+  es.addEventListener('answer', e => {
+    $('#answer').textContent = JSON.parse(e.data).text;
+    $('#ask').disabled = false; $('#go').disabled = false; es.close();
+  });
+  es.addEventListener('error', e => {
+    if (e.data) $('#answer').textContent = JSON.parse(e.data).message;
+    $('#ask').disabled = false; $('#go').disabled = false; es.close();
+  });
+});
+
+// ---- helpers ----
+function ts(x) {
+  const m = Math.floor(x/60), s = Math.floor(x%60);
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+function escapeHtml(s) {
+  return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+</script>
+</body>
+</html>

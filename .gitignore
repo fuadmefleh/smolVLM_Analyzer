@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
+
+# Large binaries — download separately
+*.exe
+*.mp4
+*.avi
+*.mov
+
+# Temp / upload dirs
+highlight_uploads/
+highlight_outputs/
+
+# Claude internal
+.claude/
+.pi/
+
+# OS
+.DS_Store
+Thumbs.db

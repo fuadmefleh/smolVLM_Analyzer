@@ -1,0 +1,7 @@
+torch
+torchvision
+transformers>=4.49.0,<5.0.0
+gradio
+av
+num2words
+decord
