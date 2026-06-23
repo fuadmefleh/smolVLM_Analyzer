@@ -34,12 +34,21 @@ jobs:
         run: pip install -r requirements.txt pyinstaller
 
       - name: Install NSIS
-        run: |
-          choco install nsis -y
-          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        run: choco install nsis -y
 
-      - name: Build installer
-        run: python build_windows.py --no-bundle-model
+      - name: Build (PyInstaller + write NSI script)
+        run: python build_windows.py --no-bundle-model --skip-nsis
+
+      - name: Package with NSIS
+        shell: pwsh
+        run: |
+          $makensis = "C:\Program Files (x86)\NSIS\makensis.exe"
+          if (-not (Test-Path $makensis)) {
+            $makensis = (Get-Command makensis -ErrorAction SilentlyContinue).Source
+          }
+          if (-not $makensis) { throw "makensis not found — check NSIS installation" }
+          Write-Host "Using makensis at: $makensis"
+          & $makensis installer\setup.nsi
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4

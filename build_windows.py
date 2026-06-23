@@ -231,6 +231,8 @@ def main():
                         help="Skip pre-downloading HuggingFace model weights")
     parser.add_argument("--no-bundle-model", action="store_true",
                         help="Don't bundle model weights — app downloads them on first launch")
+    parser.add_argument("--skip-nsis", action="store_true",
+                        help="Write the NSI script but do not run makensis (run it manually or in a separate CI step)")
     args = parser.parse_args()
 
     print(f"=== Building {APP_NAME} v{APP_VERSION} ===\n")
@@ -248,7 +250,8 @@ def main():
         launcher.unlink(missing_ok=True)
 
     nsi = write_nsis_script()
-    run_nsis(nsi)
+    if not args.skip_nsis:
+        run_nsis(nsi)
 
     print("\nDone. Bundle is in dist/SmolVLMHighlighter/")
 
