@@ -82,20 +82,13 @@ def write_launcher():
     return launcher
 
 
-def build_pyinstaller(launcher: Path):
+def build_pyinstaller(launcher: Path, bundle_model: bool = False):
     # Auto-install PyInstaller if not present
     try:
         import PyInstaller  # noqa: F401
     except ImportError:
         print("PyInstaller not found — installing...")
         run([sys.executable, "-m", "pip", "install", "pyinstaller"])
-
-    hf_cache = Path.home() / ".cache" / "huggingface" / "hub"
-    if not hf_cache.exists():
-        sys.exit(
-            "ERROR: HuggingFace cache not found. Run without --skip-model-download "
-            "or manually download the model first."
-        )
 
     cmd = [
         sys.executable, "-m", "PyInstaller",
@@ -110,8 +103,6 @@ def build_pyinstaller(launcher: Path):
         # Bundle ffmpeg binaries
         "--add-binary", f"{ROOT / 'ffmpeg.exe'}{os.pathsep}.",
         "--add-binary", f"{ROOT / 'ffprobe.exe'}{os.pathsep}.",
-        # Bundle cached model weights
-        "--add-data", f"{hf_cache}{os.pathsep}huggingface_cache",
         # Hidden imports that PyInstaller misses
         "--hidden-import", "uvicorn.logging",
         "--hidden-import", "uvicorn.loops",
@@ -129,6 +120,16 @@ def build_pyinstaller(launcher: Path):
         "--collect-all", "tokenizers",
         str(launcher),
     ]
+
+    if bundle_model:
+        hf_cache = Path.home() / ".cache" / "huggingface" / "hub"
+        if not hf_cache.exists():
+            sys.exit(
+                "ERROR: HuggingFace cache not found. Run without --no-bundle-model "
+                "or download the model first."
+            )
+        cmd += ["--add-data", f"{hf_cache}{os.pathsep}huggingface_cache"]
+
     run(cmd, cwd=ROOT)
 
 
@@ -228,19 +229,21 @@ def main():
     parser = argparse.ArgumentParser(description="Build Windows installer for SmolVLM Highlighter")
     parser.add_argument("--skip-model-download", action="store_true",
                         help="Skip pre-downloading HuggingFace model weights")
+    parser.add_argument("--no-bundle-model", action="store_true",
+                        help="Don't bundle model weights — app downloads them on first launch")
     args = parser.parse_args()
 
     print(f"=== Building {APP_NAME} v{APP_VERSION} ===\n")
 
     check_ffmpeg_binaries()
 
-    if not args.skip_model_download:
+    if not args.skip_model_download and not args.no_bundle_model:
         download_model()
 
     launcher = write_launcher()
 
     try:
-        build_pyinstaller(launcher)
+        build_pyinstaller(launcher, bundle_model=not args.no_bundle_model)
     finally:
         launcher.unlink(missing_ok=True)
 

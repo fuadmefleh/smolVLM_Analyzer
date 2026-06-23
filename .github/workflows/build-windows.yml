@@ -1,0 +1,54 @@
+name: Build Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install ffmpeg
+        run: choco install ffmpeg-full -y
+
+      - name: Copy ffmpeg binaries to project root
+        shell: pwsh
+        run: |
+          $ffmpeg = (Get-Command ffmpeg).Source
+          $ffprobe = (Get-Command ffprobe).Source
+          Copy-Item $ffmpeg ffmpeg.exe
+          Copy-Item $ffprobe ffprobe.exe
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Install NSIS
+        run: choco install nsis -y
+
+      - name: Build installer
+        run: python build_windows.py --no-bundle-model
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmolVLMHighlighter-Setup
+          path: installer/SmolVLMHighlighter_Setup.exe
+          if-no-files-found: error
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: installer/SmolVLMHighlighter_Setup.exe
+          generate_release_notes: true
