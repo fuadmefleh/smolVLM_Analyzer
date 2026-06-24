@@ -42,13 +42,26 @@ jobs:
       - name: Package with NSIS
         shell: pwsh
         run: |
-          $makensis = "C:\Program Files (x86)\NSIS\makensis.exe"
-          if (-not (Test-Path $makensis)) {
+          # Locate makensis — choco shim, then common install paths
+          $candidates = @(
+            "C:\ProgramData\chocolatey\bin\makensis.exe",
+            "C:\Program Files (x86)\NSIS\makensis.exe",
+            "C:\Program Files\NSIS\makensis.exe"
+          )
+          $makensis = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $makensis) {
             $makensis = (Get-Command makensis -ErrorAction SilentlyContinue).Source
           }
-          if (-not $makensis) { throw "makensis not found — check NSIS installation" }
+          if (-not $makensis) { throw "makensis not found — NSIS install may have failed" }
           Write-Host "Using makensis at: $makensis"
-          & $makensis installer\setup.nsi
+
+          # Confirm dist bundle exists before packaging
+          Write-Host "--- dist directory ---"
+          Get-ChildItem dist\SmolVLMHighlighter -ErrorAction Stop | Select-Object -First 20 | Format-Table Name, Length -AutoSize
+
+          # Run NSIS and propagate exit code
+          & $makensis /V2 installer\setup.nsi
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
