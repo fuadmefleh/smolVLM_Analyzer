@@ -69,14 +69,19 @@ def write_launcher():
     launcher.write_text(
         textwrap.dedent(f"""\
             import os, sys, multiprocessing
-            # PyInstaller sets sys._MEIPASS; add it to PATH so ffmpeg is found.
+
             if hasattr(sys, "_MEIPASS"):
                 os.environ["PATH"] = sys._MEIPASS + os.pathsep + os.environ.get("PATH", "")
-            import uvicorn
+
+            # Explicit import so PyInstaller bundles app.py and all its dependencies.
+            # uvicorn.run("app:app") is a string reference that PyInstaller cannot see.
+            import app as _app
+
             if __name__ == "__main__":
                 multiprocessing.freeze_support()
+                import uvicorn
                 port = int(os.environ.get("PORT", "{DEFAULT_PORT}"))
-                uvicorn.run("app:app", host="0.0.0.0", port=port)
+                uvicorn.run(_app.app, host="0.0.0.0", port=port)
         """)
     )
     return launcher
