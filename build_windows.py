@@ -212,17 +212,28 @@ def write_nsis_script():
 def run_nsis(nsi: Path):
     makensis = shutil.which("makensis")
     if not makensis:
+        # Chocolatey and common install locations on Windows
+        for candidate in [
+            r"C:\ProgramData\chocolatey\bin\makensis.exe",
+            r"C:\Program Files (x86)\NSIS\makensis.exe",
+            r"C:\Program Files\NSIS\makensis.exe",
+        ]:
+            if os.path.isfile(candidate):
+                makensis = candidate
+                break
+    if not makensis:
         print(
-            "\nINFO: makensis not found. Install it with:\n"
-            "  sudo apt install nsis\n"
-            f"Then run:  makensis \"{nsi}\"\n"
-            "to produce the final .exe installer."
+            "\nINFO: makensis not found. Install NSIS and re-run, or run manually:\n"
+            f"  makensis \"{nsi}\"\n"
         )
         return
+    print(f"Using makensis: {makensis}")
     run([makensis, str(nsi)])
     out = INSTALLER_DIR / "SmolVLMHighlighter_Setup.exe"
     if out.exists():
         print(f"\nInstaller ready: {out}")
+    else:
+        sys.exit("ERROR: makensis ran but installer was not produced — check NSIS output above.")
 
 
 def main():

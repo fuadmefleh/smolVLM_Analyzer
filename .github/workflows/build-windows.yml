@@ -36,32 +36,8 @@ jobs:
       - name: Install NSIS
         run: choco install nsis -y
 
-      - name: Build (PyInstaller + write NSI script)
-        run: python build_windows.py --no-bundle-model --skip-nsis
-
-      - name: Package with NSIS
-        shell: pwsh
-        run: |
-          # Locate makensis — choco shim, then common install paths
-          $candidates = @(
-            "C:\ProgramData\chocolatey\bin\makensis.exe",
-            "C:\Program Files (x86)\NSIS\makensis.exe",
-            "C:\Program Files\NSIS\makensis.exe"
-          )
-          $makensis = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $makensis) {
-            $makensis = (Get-Command makensis -ErrorAction SilentlyContinue).Source
-          }
-          if (-not $makensis) { throw "makensis not found — NSIS install may have failed" }
-          Write-Host "Using makensis at: $makensis"
-
-          # Confirm dist bundle exists before packaging
-          Write-Host "--- dist directory ---"
-          Get-ChildItem dist\SmolVLMHighlighter -ErrorAction Stop | Select-Object -First 20 | Format-Table Name, Length -AutoSize
-
-          # Run NSIS and propagate exit code
-          & $makensis /V2 installer\setup.nsi
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build installer
+        run: python build_windows.py --no-bundle-model
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
