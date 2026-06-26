@@ -77,10 +77,23 @@ def write_launcher():
             # uvicorn.run("app:app") is a string reference that PyInstaller cannot see.
             import app as _app
 
+            def _open_browser(port):
+                import time, webbrowser
+                import urllib.request
+                url = f"http://localhost:{{port}}/"
+                for _ in range(60):
+                    try:
+                        urllib.request.urlopen(url, timeout=1)
+                        webbrowser.open(url)
+                        return
+                    except Exception:
+                        time.sleep(1)
+
             if __name__ == "__main__":
                 multiprocessing.freeze_support()
-                import uvicorn
+                import threading, uvicorn
                 port = int(os.environ.get("PORT", "{DEFAULT_PORT}"))
+                threading.Thread(target=_open_browser, args=(port,), daemon=True).start()
                 uvicorn.run(_app.app, host="0.0.0.0", port=port)
         """)
     )

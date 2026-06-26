@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Highlight Studio</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fbfbf9;
@@ -21,12 +18,12 @@
     --bar: #d9d6cd;
     --ok: #15803d;
     --radius: 12px;
-    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --mono: ui-monospace, "Cascadia Code", "Consolas", monospace;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
-    font-family: "Inter", system-ui, sans-serif; font-size: 15px; line-height: 1.5;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
   a { color: var(--accent); }
@@ -34,7 +31,7 @@
 
   header { margin-bottom: 32px; }
   header h1 {
-    font-family: "Fraunces", serif; font-weight: 600; font-size: 2.6rem;
+    font-family: Georgia, "Times New Roman", serif; font-weight: 600; font-size: 2.6rem;
     letter-spacing: -0.02em; margin: 0; line-height: 1.05;
   }
   header h1 .mark { color: var(--accent); }
